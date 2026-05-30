@@ -1,6 +1,5 @@
 """
-main.py  –  Gmail AI Agent
-FIXED: Telegram bot runs in separate thread to avoid event loop conflicts
+main.py - FIXED: single Telegram bot instance + clean event loop separation
 """
 import asyncio
 import logging
@@ -20,64 +19,74 @@ settings = get_settings()
 setup_logging(debug=settings.debug)
 logger = logging.getLogger(__name__)
 
-# Global flag to prevent multiple bot instances
-_bot_started = False
+# Singleton guard — prevents multiple bot instances
+_bot_running = False
 _bot_lock = threading.Lock()
 
 
 def run_telegram_bot():
     """
-    Run Telegram bot in a completely separate thread with its own event loop.
-    This prevents the Conflict error caused by two polling instances.
+    Telegram bot runs in its own OS thread with its own event loop.
+    This fully isolates it from FastAPI's event loop — prevents Conflict errors.
+    The singleton guard ensures only ONE instance ever starts.
     """
-    global _bot_started
+    global _bot_running
 
     with _bot_lock:
-        if _bot_started:
-            logger.warning("Bot already started — skipping duplicate instance")
+        if _bot_running:
+            logger.warning("⚠️  Bot already running — blocked duplicate start")
             return
-        _bot_started = True
+        _bot_running = True
 
+    logger.info("Starting Telegram bot thread...")
+
+    # Brand new event loop — completely isolated from FastAPI
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    telegram_app = build_telegram_app()
 
-    async def _run():
-        await telegram_app.initialize()
-        await telegram_app.start()
-        await telegram_app.updater.start_polling(
+    async def _bot_main():
+        app = build_telegram_app()
+        await app.initialize()
+        await app.start()
+        # drop_pending_updates=True prevents processing old queued messages
+        await app.updater.start_polling(
             drop_pending_updates=True,
             allowed_updates=["message", "callback_query"],
         )
-        logger.info("✅ Telegram bot polling started")
-        # Keep alive forever
-        await asyncio.Event().wait()
+        logger.info("✅ Telegram bot is polling")
+        # Block forever — bot keeps running
+        stop_event = asyncio.Event()
+        await stop_event.wait()
 
     try:
-        loop.run_until_complete(_run())
+        loop.run_until_complete(_bot_main())
     except Exception as e:
-        logger.error(f"Telegram bot error: {e}")
+        logger.error(f"Telegram bot crashed: {e}")
     finally:
-        _bot_started = False
+        with _bot_lock:
+            _bot_running = False
+        loop.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Gmail AI Agent starting...")
 
-    # Start Telegram bot in its own thread
-    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True, name="telegram-bot")
+    # Start Telegram in its own thread — never touches FastAPI's event loop
+    bot_thread = threading.Thread(
+        target=run_telegram_bot,
+        daemon=True,
+        name="telegram-bot",
+    )
     bot_thread.start()
-    logger.info("✅ Telegram bot thread launched")
 
-    # Start Gmail polling loop in async task
+    # Start Gmail polling in FastAPI's event loop
     poll_task = asyncio.create_task(polling_loop())
     logger.info(f"✅ Gmail polling started (every {settings.poll_interval}s)")
 
     yield  # App is running
 
-    # Graceful shutdown
-    logger.info("Shutting down Gmail AI Agent...")
+    logger.info("Shutting down...")
     poll_task.cancel()
     try:
         await poll_task
@@ -87,13 +96,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Gmail AI Agent",
-    description="24/7 AI Gmail monitor with Telegram alerts",
     version="2.0.0",
     lifespan=lifespan,
 )
 
 app.include_router(router)
-
 
 if __name__ == "__main__":
     uvicorn.run(
