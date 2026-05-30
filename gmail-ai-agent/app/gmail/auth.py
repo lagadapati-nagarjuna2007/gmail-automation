@@ -1,5 +1,6 @@
 """
 app/gmail/auth.py  –  Google OAuth 2.0 + credential management
+FIXED: All datetime objects are timezone-aware UTC
 """
 import logging
 from datetime import datetime, timezone
@@ -69,27 +70,45 @@ def get_credentials(user_email: str) -> Credentials | None:
         scopes=SCOPES,
     )
 
+    # FIX: Always set expiry as timezone-aware UTC datetime
     if token_row.get("token_expiry"):
-        creds.expiry = datetime.fromisoformat(
-            token_row["token_expiry"].replace("Z", "+00:00")
-        )
+        expiry_str = token_row["token_expiry"]
+        try:
+            expiry_str = expiry_str.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(expiry_str)
+            # If naive (no tzinfo), force UTC
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            creds.expiry = parsed
+        except Exception as e:
+            logger.warning(f"Could not parse token_expiry: {e}")
+            # Force refresh by setting expiry in the past
+            creds.expiry = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
     # Auto-refresh if expired
-    if creds.expired and creds.refresh_token:
-        try:
+    try:
+        if creds.expired and creds.refresh_token:
+            logger.info(f"Refreshing token for {user_email}...")
             creds.refresh(Request())
             save_oauth_token(user_email, _creds_to_dict(creds))
             logger.info(f"Token refreshed for {user_email}")
-        except Exception as e:
-            logger.error(f"Token refresh failed for {user_email}: {e}")
-            return None
+    except Exception as e:
+        logger.error(f"Token refresh failed for {user_email}: {e}")
+        return None
 
     return creds
 
 
 def _creds_to_dict(creds: Credentials) -> dict:
+    """Always store expiry as timezone-aware UTC ISO string."""
+    expiry = None
+    if creds.expiry:
+        if creds.expiry.tzinfo is None:
+            expiry = creds.expiry.replace(tzinfo=timezone.utc).isoformat()
+        else:
+            expiry = creds.expiry.isoformat()
     return {
         "access_token": creds.token,
         "refresh_token": creds.refresh_token,
-        "expiry": creds.expiry.isoformat() if creds.expiry else None,
+        "expiry": expiry,
     }

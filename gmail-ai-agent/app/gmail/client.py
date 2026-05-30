@@ -1,5 +1,6 @@
 """
 app/gmail/client.py  –  All Gmail API operations
+FIXED: All datetime objects are timezone-aware UTC
 """
 import base64
 import logging
@@ -27,15 +28,10 @@ def _service(user_email: str):
 # ── Fetch new inbox message IDs ──────────────
 
 def get_new_message_ids(user_email: str, since_history_id: Optional[str] = None) -> list[str]:
-    """
-    Returns message IDs of emails in INBOX that haven't been processed yet.
-    Uses historyId-based diff if available, otherwise fetches recent unread.
-    """
     try:
         svc = _service(user_email)
 
         if since_history_id:
-            # Efficient: only fetch delta since last check
             try:
                 history = svc.users().history().list(
                     userId="me",
@@ -50,7 +46,6 @@ def get_new_message_ids(user_email: str, since_history_id: Optional[str] = None)
                 return ids
             except HttpError as e:
                 if e.resp.status == 404:
-                    # historyId too old, fall back to recent fetch
                     logger.warning("History ID expired, falling back to recent fetch")
                 else:
                     raise
@@ -69,7 +64,6 @@ def get_new_message_ids(user_email: str, since_history_id: Optional[str] = None)
 
 
 def get_current_history_id(user_email: str) -> Optional[str]:
-    """Get the current historyId to use as baseline for next poll."""
     try:
         svc = _service(user_email)
         profile = svc.users().getProfile(userId="me").execute()
@@ -102,6 +96,7 @@ def _parse_message(msg: dict) -> dict:
     sender_raw = headers.get("from", "")
     sender_name, sender_email = _parse_sender(sender_raw)
     subject = headers.get("subject", "(No Subject)")
+    # FIX: always return timezone-aware datetime string
     received_at = _parse_date(headers.get("date", ""))
     body = _extract_body(msg["payload"])
 
@@ -127,10 +122,16 @@ def _parse_sender(raw: str):
 
 
 def _parse_date(date_str: str) -> str:
+    """Always return a timezone-aware ISO datetime string."""
     try:
         from email.utils import parsedate_to_datetime
-        return parsedate_to_datetime(date_str).isoformat()
+        dt = parsedate_to_datetime(date_str)
+        # Ensure timezone-aware
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
     except Exception:
+        # Always return timezone-aware UTC now as fallback
         return datetime.now(timezone.utc).isoformat()
 
 
@@ -169,28 +170,9 @@ def _has_attachments(payload: dict) -> bool:
     return False
 
 
-# ── Mark as read ─────────────────────────────
-
-def mark_as_read(user_email: str, message_id: str) -> None:
-    try:
-        svc = _service(user_email)
-        svc.users().messages().modify(
-            userId="me",
-            id=message_id,
-            body={"removeLabelIds": ["UNREAD"]},
-        ).execute()
-    except Exception as e:
-        logger.warning(f"Could not mark as read: {e}")
-
-
 # ── Send email ───────────────────────────────
 
-def send_email(
-    user_email: str,
-    to: list[str],
-    subject: str,
-    body: str,
-) -> bool:
+def send_email(user_email: str, to: list[str], subject: str, body: str) -> bool:
     try:
         svc = _service(user_email)
         msg = MIMEMultipart("alternative")
