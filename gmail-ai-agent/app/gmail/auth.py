@@ -47,20 +47,22 @@ def _force_utc(dt: datetime) -> datetime:
 
 def _parse_expiry(expiry_str: str) -> datetime:
     """
-    Parse any expiry string from DB and return timezone-aware UTC datetime.
+    Parse any expiry string from DB and return timezone-naive UTC datetime.
     Handles: ISO format, Z suffix, +00:00 suffix, naive strings.
     """
     if not expiry_str:
-        # Return a past time to force refresh
-        return datetime(2000, 1, 1, tzinfo=timezone.utc)
+        # Return a past time to force refresh (naive)
+        return datetime(2000, 1, 1)
     try:
         # Normalize Z → +00:00
         normalized = expiry_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(normalized)
-        return _force_utc(dt)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        return dt
     except Exception as e:
         logger.warning(f"Failed to parse expiry '{expiry_str}': {e} — forcing refresh")
-        return datetime(2000, 1, 1, tzinfo=timezone.utc)
+        return datetime(2000, 1, 1)
 
 
 def _creds_to_dict(creds: Credentials) -> dict:
@@ -70,7 +72,10 @@ def _creds_to_dict(creds: Credentials) -> dict:
     """
     expiry = None
     if creds.expiry:
-        expiry = _force_utc(creds.expiry).isoformat()
+        dt = creds.expiry
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        expiry = dt.astimezone(timezone.utc).isoformat()
     return {
         "access_token": creds.token,
         "refresh_token": creds.refresh_token,
@@ -122,20 +127,20 @@ def get_credentials(user_email: str) -> Credentials | None:
         scopes=SCOPES,
     )
 
-    # Always set expiry as timezone-aware UTC
+    # Always set expiry as timezone-naive UTC
     creds.expiry = _parse_expiry(token_row.get("token_expiry", ""))
 
-    # Check expiry manually to avoid Google's internal naive comparison bug
-    now_utc = datetime.now(timezone.utc)
-    is_expired = creds.expiry <= (now_utc + timedelta(seconds=60))  # 60s buffer
+    # Check expiry manually using naive UTC datetimes
+    now_utc_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+    is_expired = creds.expiry <= (now_utc_naive + timedelta(seconds=60))  # 60s buffer
 
     if is_expired:
         logger.info(f"Token expired for {user_email}, refreshing...")
         try:
             creds.refresh(Request())
-            # After refresh, Google sets creds.expiry as naive — fix it
-            if creds.expiry and creds.expiry.tzinfo is None:
-                creds.expiry = creds.expiry.replace(tzinfo=timezone.utc)
+            # After refresh, Google sets creds.expiry as naive in UTC. Keep it naive!
+            if creds.expiry and creds.expiry.tzinfo is not None:
+                creds.expiry = creds.expiry.astimezone(timezone.utc).replace(tzinfo=None)
             save_oauth_token(user_email, _creds_to_dict(creds))
             logger.info(f"✅ Token refreshed for {user_email}")
         except Exception as e:
