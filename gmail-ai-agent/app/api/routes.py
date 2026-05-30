@@ -55,13 +55,13 @@ async def auth_callback(code: str = Query(...), error: str = Query(None)):
         profile = svc.users().getProfile(userId="me").execute()
         user_email = profile["emailAddress"]
 
-        # Persist token + user
-        save_oauth_token(user_email, token_data)
+       # Persist token + user
         upsert_user(
             email=user_email,
             telegram_chat_id=settings.telegram_chat_id,
             name=user_email.split("@")[0],
         )
+        save_oauth_token(user_email, token_data)
 
         # Set baseline historyId so old emails are NOT re-processed
         register_new_user(user_email)
