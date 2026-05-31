@@ -80,8 +80,9 @@ async def auth_callback(code: str = Query(...), error: str = Query(None)):
 async def health():
     return {"status": "healthy", "service": "Gmail AI Agent"}
 
-
+from fastapi import Response
 @router.get("/ping")
+@router.head("/ping")
 async def ping():
     return {"status": "ok"}
 
