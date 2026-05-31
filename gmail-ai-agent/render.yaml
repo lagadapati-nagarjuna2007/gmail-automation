@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: gmail-ai-agent
+    plan: free
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: POLL_INTERVAL
+        value: "30"

@@ -103,10 +103,12 @@ app = FastAPI(
 app.include_router(router)
 
 if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", settings.app_port))
     uvicorn.run(
         "main:app",
         host=settings.app_host,
-        port=settings.app_port,
+        port=port,
         reload=False,
         log_level="info",
     )

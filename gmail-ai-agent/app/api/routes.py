@@ -81,6 +81,11 @@ async def health():
     return {"status": "healthy", "service": "Gmail AI Agent"}
 
 
+@router.get("/ping")
+async def ping():
+    return {"status": "ok"}
+
+
 @router.get("/stats")
 async def stats():
     return get_stats()
