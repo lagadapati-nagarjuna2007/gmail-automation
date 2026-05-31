@@ -68,7 +68,10 @@ def get_auth_url() -> str:
         CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
     )
     auth_url, _ = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true", prompt="consent"
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+        code_challenge_method=None,
     )
     return auth_url
 
@@ -77,7 +80,10 @@ def exchange_code(code: str) -> dict:
     flow = Flow.from_client_config(
         CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
     )
-    flow.fetch_token(code=code)
+    flow.fetch_token(
+        code=code,
+        include_client_id=True,
+    )
     return _creds_to_dict(flow.credentials)
 
 
