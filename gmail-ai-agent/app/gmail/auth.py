@@ -78,10 +78,7 @@ def exchange_code(code: str) -> dict:
     flow = Flow.from_client_config(
         CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
     )
-    flow.fetch_token(
-        code=code,
-        include_client_id=True,
-    )
+    flow.fetch_token(code=code)
     return _creds_to_dict(flow.credentials)
 
 
