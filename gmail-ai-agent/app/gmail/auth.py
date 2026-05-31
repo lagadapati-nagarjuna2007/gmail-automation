@@ -62,7 +62,6 @@ def _creds_to_dict(creds: Credentials) -> dict:
         "expiry": expiry,
     }
 
-
 def get_auth_url() -> str:
     flow = Flow.from_client_config(
         CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
@@ -71,7 +70,6 @@ def get_auth_url() -> str:
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
-        code_challenge_method=None,
     )
     return auth_url
 
