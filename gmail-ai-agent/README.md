@@ -36,8 +36,8 @@ graph TD
 | Layer | Technology |
 |---|---|
 | **Backend** | Python 3.14, FastAPI, Uvicorn |
-| **AI Engine** | Groq API (GPT-OSS-120B) |
-| **Database** | Supabase (PostgreSQL) |
+| **AI Engine** | Groq API (GPT-OSS-120B) (free) |
+| **Database** | Supabase (PostgreSQL) (free) |
 | **Notifications** | Telegram Bot API |
 | **Auth** | Google OAuth 2.0 |
 | **Hosting** | Render.com (free tier) |
