@@ -1,6 +1,20 @@
-# ⚡ Gmail AI Agent (v2.0.0)
+# 🤖 Gmail AI Agent v2.0.0
 
-An intelligent, autonomous personal assistant that monitors your Gmail inbox in real-time, analyzes incoming messages using advanced AI models, alerts you of important items via Telegram, and lets you compose and send emails directly using natural language from Telegram.
+A fully autonomous, 24/7 personal AI secretary that monitors your Gmail inbox, intelligently analyzes every incoming email using AI, sends instant Telegram alerts for important emails, and lets you send emails directly from Telegram — completely free, no VPS required.
+
+---
+
+## 🌟 What It Does
+
+> You never need to open Gmail again. The agent does everything automatically.
+
+- 📬 **Monitors Gmail every 30 seconds** — detects new emails instantly
+- 🧠 **AI analyzes every email** — scores importance, detects urgency and deadlines
+- 🔔 **Automatic Telegram alerts** — notifies you immediately for important emails
+- 🚫 **Ignores spam silently** — promotions, newsletters, ads are skipped
+- 📤 **Send emails via Telegram** — just type naturally, no need to open Gmail
+- 👥 **Contact group support** — send to multiple recipients at once
+- 📊 **Full email history** — search, summarize, view stats anytime
 
 ---
 
@@ -17,125 +31,213 @@ graph TD
 ```
 
 ---
+## 🛠️ Tech Stack
 
-## ✨ Core Features
-
-*   **Real-Time Email Monitoring**: Uses high-performance, history-based polling instead of heavy webhooks, detecting only new emails in your inbox without rate-limiting issues.
-*   **AI Importance & Urgency Classification**: Automatically scores emails (0-100), detects urgency levels (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), and classifies them into categories (e.g., `Interview`, `Payment`, `Security`, `Academic`, `General`).
-*   **Intelligent Summaries & Deadlines**: Generates concise 2-3 sentence summaries and automatically extracts deadline dates.
-*   **Automatic Telegram Alerts**: Sends a beautifully formatted card on Telegram containing key insights, importance reason, and action items for all important emails.
-*   **Natural Language Outbox**: Send emails by talking to your bot! Type `Send email to hr@company.com`, and the interactive assistant guides you through the subject, body, and confirmation flow.
-*   **Contact Groups**: Configure target groups (e.g., `"Recruiters"`, `"Family"`) in Supabase to broadcast emails to multiple recipients at once.
-*   **Robust Token Lifecycle**: Integrated with Google OAuth 2.0 with a custom timezone-naive auto-refresh mechanism preventing unauthorized access/expiry dropouts.
-
----
-
-## 🛠️ Technology Stack
-
-*   **Backend Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Uvicorn server, asynchronous router)
-*   **Database**: [Supabase](https://supabase.com/) (PostgreSQL backend via Python Client SDK)
-*   **LLM Pipeline**: [Groq Cloud API](https://groq.com/)
-*   **Notification Engine**: [python-telegram-bot](https://python-telegram-bot.org/) (Async framework)
-*   **Auth**: [Google OAuth 2.0 Flow](https://developers.google.com/identity/protocols/oauth2)
+| Layer | Technology |
+|---|---|
+| **Backend** | Python 3.14, FastAPI, Uvicorn |
+| **AI Engine** | Groq API (GPT-OSS-120B) |
+| **Database** | Supabase (PostgreSQL) |
+| **Notifications** | Telegram Bot API |
+| **Auth** | Google OAuth 2.0 |
+| **Hosting** | Render.com (free tier) |
+| **Keep-Alive** | UptimeRobot (free) |
 
 ---
 
-## 📁 Directory Structure
+## 💸 Cost
 
-```text
+| Service | Cost |
+|---|---|
+| Render hosting | ✅ Free |
+| UptimeRobot pinger | ✅ Free |
+| Supabase database | ✅ Free |
+| Groq AI analysis | ✅ Free |
+| Telegram Bot API | ✅ Free |
+| Gmail API | ✅ Free |
+| **Total** | **$0/month forever** |
+
+---
+
+## 📁 Project Structure
+
+```
 gmail-ai-agent/
-├── app/
-│   ├── ai/
-│   │   └── analyzer.py       # Groq prompt templates and classification logic
-│   ├── api/
-│   │   └── routes.py         # FastAPI endpoints (OAuth callback, Health, Stats, Ping)
-│   ├── database/
-│   │   ├── client.py         # Supabase connection and CRUD statements
-│   │   └── schema.sql        # Database schema script
-│   ├── gmail/
-│   │   ├── auth.py           # Google credentials manager and token refresher
-│   │   └── client.py         # Gmail inbox querying and outbox sender
-│   ├── services/
-│   │   └── poller.py         # Background history polling thread coordinator
-│   ├── telegram/
-│   │   └── bot.py            # Telegram commands, message wizard, and alert formatter
-│   ├── config.py             # Settings loader via pydantic-settings
-│   └── logger.py             # Core rotating file logger configuration
-├── main.py                   # Application entry point (FastAPI lifespan controller)
-├── requirements.txt          # Python dependencies
-├── Dockerfile                # Production container blueprint
-├── Procfile                  # Platform-as-a-service execution directive
-├── README.md                 # Project overview and documentation
-├── render.yaml               # Render.com Blueprint configuration mapping
-├── RENDER_SETUP.md           # Render deployment & UptimeRobot keep-alive guide
-└── SETUP.md                  # Comprehensive credentials setup guide
+├── main.py                    # Entry point — FastAPI + Telegram + Polling
+├── requirements.txt           # Python dependencies
+├── render.yaml                # Render.com deployment config
+├── Dockerfile                 # Docker container config
+├── Procfile                   # PaaS start command
+├── RENDER_SETUP.md            # Render + UptimeRobot deployment guide
+├── SETUP.md                   # Full credentials setup guide
+└── app/
+    ├── config.py              # Environment settings (Pydantic)
+    ├── logger.py              # Rotating file logger
+    ├── ai/
+    │   └── analyzer.py        # Groq AI email analysis
+    ├── api/
+    │   └── routes.py          # FastAPI routes (OAuth, health, ping, stats)
+    ├── database/
+    │   ├── client.py          # All Supabase DB operations
+    │   └── schema.sql         # Database schema (run once in Supabase)
+    ├── gmail/
+    │   ├── auth.py            # Google OAuth 2.0 + token refresh
+    │   └── client.py          # Gmail fetch, parse, send
+    ├── services/
+    │   └── poller.py          # Gmail polling loop (every 30s)
+    └── telegram/
+        └── bot.py             # Bot commands + auto alerts + email send flow
 ```
 
 ---
 
-## 🏁 Setup & Deployment
+## 🚀 Deployment (Free — No VPS)
 
-Detailed guidelines for setting up credentials on Google Cloud Console, Supabase, Groq, and Telegram can be found in [SETUP.md](file:///c:/Users/sai/Desktop/gmail-ai-agents/gmail-ai-agent/SETUP.md).
+### Prerequisites
+- Google Cloud account (free)
+- Supabase account (free)
+- Telegram account
+- Groq account (free)
+- Render account (free)
+- UptimeRobot account (free)
 
-For detailed production deployment on Render.com free tier hosting, consult [RENDER_SETUP.md](file:///c:/Users/sai/Desktop/gmail-ai-agents/gmail-ai-agent/RENDER_SETUP.md).
+### Quick Deploy Steps
 
-### 1. Local Environment Configuration
-Create a `.env` file in the root directory:
+**1. Supabase** — Run `app/database/schema.sql` in SQL Editor
+
+**2. Google Cloud** — Enable Gmail API, create OAuth 2.0 credentials
+
+**3. Telegram** — Create bot via @BotFather, get token and chat ID
+
+**4. Groq** — Get API key from console.groq.com
+
+**5. Render** — Deploy from GitHub, add environment variables
+
+**6. UptimeRobot** — Add monitor for `/ping` endpoint (prevents sleeping)
+
+**7. Authenticate** — Visit `https://your-app.onrender.com/auth/login`
+
+> See [RENDER_SETUP.md](RENDER_SETUP.md) for the complete step-by-step guide.
+
+---
+
+## ⚙️ Environment Variables
 
 ```env
-# Google OAuth 2.0
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_REDIRECT_URI=https://your-service-name.onrender.com/auth/callback
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
-
-# Groq LLM Key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=https://your-app.onrender.com/auth/callback
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
 GROQ_API_KEY=your_groq_api_key
-
-# Supabase Configurations
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your_supabase_service_role_key
-
-# App Environment Settings
-APP_HOST=0.0.0.0
-APP_PORT=8000
-APP_BASE_URL=your-service-name.onrender.com
-SECRET_KEY=any_secure_random_string
-DEBUG=false
+APP_BASE_URL=https://your-app.onrender.com
+SECRET_KEY=any_random_string
 POLL_INTERVAL=30
 ```
 
-### 2. Local Run
-Install dependencies and start the app:
-```bash
-pip install -r requirements.txt
-python main.py
-```
-Visit `http://localhost:8000/auth/login` to connect your Gmail account to the local agent.
+---
+
+## 🤖 Telegram Commands
+
+| Command | What it does |
+|---|---|
+| `/start` | Activate the bot |
+| `/help` | Show all commands |
+| `/inbox` | Last 10 important emails |
+| `/search <query>` | Search emails by keyword |
+| `/summarize` | Last 24 hours summary |
+| `/stats` | Processing statistics |
+| `/groups` | List contact groups |
 
 ---
 
-## 🤖 Bot Interaction Commands
+## 📤 Send Emails via Telegram
 
-| Command | Action |
-| :--- | :--- |
-| `/start` | Starts the bot and checks active listener status |
-| `/help` | Explains all commands and email sending examples |
-| `/inbox` | Displays the last 10 classified "Important" emails |
-| `/search <query>` | Performs a text search across subject lines, summaries, and senders |
-| `/summarize` | Aggregates all important emails received in the last 24 hours |
-| `/stats` | Shows data processing statistics (totals, alerts sent) |
-| `/groups` | Lists registered email broadcast groups |
+Just type naturally in one message:
 
-### ✉️ Example: Sending an Email
-
-Simply type a message following this format into your private chat with the bot:
-```text
-Send email to hr@targetcompany.com
-Subject: Interview Confirmation
-Dear Team, I confirm my availability for the upcoming technical discussion on Monday at 11 AM.
+**Single recipient:**
 ```
-The bot will verify the contents and prompt you to reply with `YES` to finalize sending.
+Send email to hr@company.com
+Subject: Interview Confirmation
+I confirm my availability for tomorrow at 10 AM.
+```
+
+**Multiple recipients:**
+```
+Send email to john@gmail.com, alice@gmail.com
+Subject: Project Update
+Please review the latest changes.
+```
+
+**Contact group:**
+```
+Send email to Recruiters
+Subject: Application Follow-up
+I wanted to follow up on my application.
+```
+
+> For more than 5 recipients, the bot asks for confirmation before sending.
+
+---
+
+## 🔔 Example Telegram Alert
+
+```
+🚨 IMPORTANT EMAIL
+────────────────────────────
+📂 Category: Interview
+📨 From: HR Team <hr@company.com>
+📝 Subject: Interview Invitation - Software Engineer
+
+📋 Summary:
+You have been shortlisted for the next interview round.
+Please attend the technical interview tomorrow at 10 AM.
+
+✅ Action Required
+🎯 Score: 95/100
+⚡ Urgency: HIGH
+💡 Reason: Interview invitation requiring immediate action
+⏰ Deadline: Tomorrow 10:00 AM
+```
+
+---
+
+## 🧠 AI Classification
+
+Every email is analyzed and scored:
+
+| Score | Urgency | Examples |
+|---|---|---|
+| 80-100 | CRITICAL/HIGH | Interview invites, OTP, security alerts, job offers |
+| 60-79 | HIGH/MEDIUM | Payment confirmations, bank alerts, deadlines |
+| 40-59 | MEDIUM | Academic notices, client emails |
+| 0-39 | LOW | Promotions, newsletters, spam (ignored) |
+
+---
+
+## 📡 API Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `GET /health` | Health check |
+| `GET /ping` | UptimeRobot keep-alive |
+| `GET /stats` | Processing statistics |
+| `GET /auth/login` | Start Gmail OAuth |
+| `GET /auth/callback` | OAuth callback |
+
+---
+
+## 🔒 Security
+
+- OAuth tokens stored securely in Supabase
+- Auto token refresh before expiry
+- Real API keys only in environment variables — never in code
+- `.env` file blocked by `.gitignore`
+
+---
+
+## 📄 License
+
+MIT License — free to use, modify, and distribute.
