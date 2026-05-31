@@ -228,6 +228,20 @@ Every email is analyzed and scored:
 | `GET /auth/callback` | OAuth callback |
 
 ---
+## 🤖 Bot Interaction Commands
+
+| Command | Action |
+| :--- | :--- |
+| `/start` | Starts the bot and checks active listener status |
+| `/help` | Explains all commands and email sending examples |
+| `/inbox` | Displays the last 10 classified "Important" emails |
+| `/search <query>` | Performs a text search across subject lines, summaries, and senders |
+| `/summarize` | Aggregates all important emails received in the last 24 hours |
+| `/stats` | Shows data processing statistics (totals, alerts sent) |
+| `/groups` | Lists registered email broadcast groups |
+
+The bot will verify the contents and prompt you to reply with `YES` to finalize sending.
+---
 
 ## 🔒 Security
 
