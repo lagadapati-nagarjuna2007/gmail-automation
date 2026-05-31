@@ -64,7 +64,10 @@ def _creds_to_dict(creds: Credentials) -> dict:
 
 def get_auth_url() -> str:
     flow = Flow.from_client_config(
-        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
+        CLIENT_CONFIG,
+        scopes=SCOPES,
+        redirect_uri=settings.google_redirect_uri,
+        autogenerate_code_verifier=False,
     )
     auth_url, _ = flow.authorization_url(
         access_type="offline",
@@ -76,7 +79,10 @@ def get_auth_url() -> str:
 
 def exchange_code(code: str) -> dict:
     flow = Flow.from_client_config(
-        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=settings.google_redirect_uri
+        CLIENT_CONFIG,
+        scopes=SCOPES,
+        redirect_uri=settings.google_redirect_uri,
+        autogenerate_code_verifier=False,
     )
     flow.fetch_token(code=code)
     return _creds_to_dict(flow.credentials)
